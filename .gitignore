@@ -1,0 +1,7 @@
+# secrets
+.pi/agent/auth.json
+.pi/agent/sessions
+.pi/agent/run-history.jsonl
+
+# helper binary to find files (why is this in .pi?)
+.pi/agent/bin/fd

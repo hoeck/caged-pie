@@ -1,0 +1,12 @@
+#!/bin/sh
+
+PI_CONFIG_PATH="$(dirname "$(test -L "$0" && readlink "$0" || echo "$0")")"
+
+docker run -it --rm \
+  --mount type=bind,src=$PI_CONFIG_PATH/.pi,dst=/home/ubuntu/.pi \
+  --mount type=bind,src=$PI_CONFIG_PATH/npm,dst=/home/ubuntu/npm \
+  --mount type=bind,src=$PWD,dst=/home/ubuntu/project \
+  --env OPENROUTER_API_KEY=$OPENROUTER_API_KEY \
+  pi:latest \
+  bash \
+  "$@"
