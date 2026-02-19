@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# ubuntu image with node, npm and tools
+docker buildx build -t pi:latest .
+
+# pi itself
+./pi-bash -c "npm install -g @mariozechner/pi-coding-agent"
+
+# pi packages
+./pi-bash -c "pi install npm:pi-subagents"
+./pi-bash -c "npx pi-subagents"
