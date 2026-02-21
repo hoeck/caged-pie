@@ -79,28 +79,65 @@ function formatJsonString(jsonString) {
   return jsonObjects.join("\n");
 }
 
+function getMessageModelAndCost(message) {
+  const cost = message?.usage?.cost;
+  const model = message?.model;
+
+  return { cost, model };
+}
+
 async function processSessionFile(filePath) {
   const rawContent = fs.readFileSync(filePath).toString();
   const sanitized = formatJsonString(rawContent);
 
   const costsByModel = new Map();
+  const lines = sanitized.split("\n");
 
-  for await (const line of sanitized.split("\n")) {
+  for (const line of sanitized.split("\n")) {
     if (!line.trim()) {
       continue;
     }
 
+    let entry;
     try {
-      const entry = JSON.parse(line);
-      const cost = entry?.message?.usage?.cost;
-      const model = entry?.message?.model;
-
-      if (cost !== undefined) {
-        costsByModel.set(model, costsByModel.get(model) ?? 0 + cost.total);
-      }
+      entry = JSON.parse(line);
     } catch (e) {
-      console.log("errorneous line:", line);
+      console.log(line);
+
       throw e;
+    }
+
+    if (entry.type === "session") {
+      console.log(entry);
+    }
+
+    // direct message cost
+    const { cost, model } = getMessageModelAndCost(entry?.message);
+
+    if (cost !== undefined) {
+      costsByModel.set(model, (costsByModel.get(model) ?? 0) + cost.total);
+    }
+
+    // cost of messages in subagents
+    if (
+      entry?.message?.toolName === "subagent" &&
+      entry?.message?.details?.results
+    ) {
+      for (const result of entry.message.details.results) {
+        if (result.messages) {
+          for (const subagentMessage of result.messages) {
+            const { cost: subagentCost, model: subagentModel } =
+              getMessageModelAndCost(subagentMessage);
+
+            if (subagentCost !== undefined) {
+              costsByModel.set(
+                subagentModel,
+                (costsByModel.get(subagentModel) ?? 0) + subagentCost.total,
+              );
+            }
+          }
+        }
+      }
     }
   }
 
