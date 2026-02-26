@@ -6,6 +6,6 @@
   "packages": [
     "npm:pi-subagents"
   ],
-  "defaultThinkingLevel": "off",
+  "defaultThinkingLevel": "medium",
   "showHardwareCursor": true
 }
