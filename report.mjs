@@ -142,45 +142,60 @@ async function processSessionFile(filePath) {
   return { costsByModel, sessionStart };
 }
 
+/**
+ * Calculates the maximum width needed for each column based on headers and data.
+ */
+const calculateColumnWidths = (headers, data) => {
+  const widths = headers.map((h) => h.length);
+  data.forEach((row) => {
+    headers.forEach((header, i) => {
+      const cellValue = String(row[header] || "");
+      if (cellValue.length > widths[i]) {
+        widths[i] = cellValue.length;
+      }
+    });
+  });
+  return widths;
+};
+
+/**
+ * Formats an array of objects into a clean, readable text table.
+ */
 function formatTable(data) {
-  if (data.length === 0) {
+  if (!data || data.length === 0) {
     return "";
   }
 
   const headers = Object.keys(data[0]);
-  const columnWidths = headers.map((header) => header.length);
+  const columnWidths = calculateColumnWidths(headers, data);
+  const COLUMN_SEPARATOR = "   ";
 
-  data.forEach((row) => {
-    Object.values(row).forEach((value, index) => {
-      const valueString = String(value);
-      if (valueString.length > columnWidths[index]) {
-        columnWidths[index] = valueString.length;
-      }
-    });
-  });
-
-  let tableString = "";
+  // 1. Build the header row
   const headerRow = headers
-    .map((header, index) => header.padEnd(columnWidths[index]))
-    .join("   ");
-  tableString += headerRow + "\n";
+    .map((header, i) => header.padEnd(columnWidths[i]))
+    .join(COLUMN_SEPARATOR);
 
-  const separator = columnWidths.map((width) => "-".repeat(width)).join("   ");
-  tableString += separator + "\n";
+  // 2. Build the separator row (e.g., "---   -------")
+  const separatorRow = columnWidths
+    .map((width) => "-".repeat(width))
+    .join(COLUMN_SEPARATOR);
 
-  data.forEach((row) => {
-    const rowString = Object.values(row)
-      .map((value, index) => {
-        if (String(value).includes("-------")) {
-          return "-".repeat(columnWidths[index]);
+  // 3. Build the body rows
+  const bodyRows = data.map((row) => {
+    return headers
+      .map((header, i) => {
+        const cellValue = String(row[header] || "");
+        // Handle the custom horizontal line drawn for totals
+        if (cellValue === "-------") {
+          return "-".repeat(columnWidths[i]);
         }
-        return String(value).padEnd(columnWidths[index]);
+        return cellValue.padEnd(columnWidths[i]);
       })
-      .join("   ");
-    tableString += rowString + "\n";
+      .join(COLUMN_SEPARATOR);
   });
 
-  return tableString;
+  // 4. Assemble the final table
+  return [headerRow, separatorRow, ...bodyRows].join("\n");
 }
 
 async function generateReport() {
@@ -250,4 +265,5 @@ async function generateReport() {
     `\nGrand Total (All Sessions): $${totalCostAllSessions.toFixed(4)}`,
   );
 }
+
 generateReport().catch(console.error);
