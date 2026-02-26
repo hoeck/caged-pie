@@ -25,6 +25,7 @@ async function getSessionFiles(dir) {
   return files.flat().filter((file) => file !== null);
 }
 
+// pi's jsonl session log files sometimes contain two json objects on the same line, clean that up to be able to parse it line-by-line
 function formatJsonString(jsonString) {
   const states = {
     OUTSIDE_OBJECT: "OUTSIDE_OBJECT",
@@ -84,6 +85,7 @@ function getMessageModelAndCost(message) {
   return { cost, model };
 }
 
+// scan all messages in this file and build a map of model -> cost, including subagent models
 async function processSessionFile(filePath) {
   const rawContent = fs.readFileSync(filePath).toString();
   const sanitized = formatJsonString(rawContent);
@@ -142,9 +144,7 @@ async function processSessionFile(filePath) {
   return { costsByModel, sessionStart };
 }
 
-/**
- * Calculates the maximum width needed for each column based on headers and data.
- */
+// calculate the maximum width needed for each column based on headers and data.
 const calculateColumnWidths = (headers, data) => {
   const widths = headers.map((h) => h.length);
   data.forEach((row) => {
@@ -158,9 +158,7 @@ const calculateColumnWidths = (headers, data) => {
   return widths;
 };
 
-/**
- * Formats an array of objects into a clean, readable text table.
- */
+// format an array of objects into a clean, readable text table.
 function formatTable(data) {
   if (!data || data.length === 0) {
     return "";
@@ -198,6 +196,7 @@ function formatTable(data) {
   return [headerRow, separatorRow, ...bodyRows].join("\n");
 }
 
+// cost report over of all session log files
 async function generateReport() {
   const sessionFiles = await getSessionFiles(SESSIONS_DIR);
   const reportData = [];
@@ -266,4 +265,4 @@ async function generateReport() {
   );
 }
 
-generateReport().catch(console.error);
+await generateReport().catch(console.error);
