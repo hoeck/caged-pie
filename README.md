@@ -20,3 +20,11 @@ with only access to your projects current directory.
 6. go to your project and type `pi` to get going
 7. use different pi configs by (e.g. different subagent configs) by changing
    the config in the repo using different branches
+
+# Cost Report
+
+```
+$> ./cost-report.js
+```
+
+Show openrouter session costs parsed from the pi logs
