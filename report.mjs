@@ -25,8 +25,6 @@ async function getSessionFiles(dir) {
   return files.flat().filter((file) => file !== null);
 }
 
-// somehow the pi agents session jsonl logfiles sometimes have two json objects on the same line, breaking a simple readline-parsejson loop
-// this simple state machine runs over the jsonl file string and cleans that up
 function formatJsonString(jsonString) {
   const states = {
     OUTSIDE_OBJECT: "OUTSIDE_OBJECT",
@@ -92,6 +90,7 @@ async function processSessionFile(filePath) {
 
   const costsByModel = new Map();
   const lines = sanitized.split("\n");
+  let sessionStart;
 
   for (const line of sanitized.split("\n")) {
     if (!line.trim()) {
@@ -99,6 +98,7 @@ async function processSessionFile(filePath) {
     }
 
     let entry;
+
     try {
       entry = JSON.parse(line);
     } catch (e) {
@@ -108,17 +108,15 @@ async function processSessionFile(filePath) {
     }
 
     if (entry.type === "session") {
-      console.log(entry);
+      sessionStart = entry.timestamp;
     }
 
-    // direct message cost
     const { cost, model } = getMessageModelAndCost(entry?.message);
 
     if (cost !== undefined) {
       costsByModel.set(model, (costsByModel.get(model) ?? 0) + cost.total);
     }
 
-    // cost of messages in subagents
     if (
       entry?.message?.toolName === "subagent" &&
       entry?.message?.details?.results
@@ -141,18 +139,115 @@ async function processSessionFile(filePath) {
     }
   }
 
-  return { costsByModel };
+  return { costsByModel, sessionStart };
+}
+
+function formatTable(data) {
+  if (data.length === 0) {
+    return "";
+  }
+
+  const headers = Object.keys(data[0]);
+  const columnWidths = headers.map((header) => header.length);
+
+  data.forEach((row) => {
+    Object.values(row).forEach((value, index) => {
+      const valueString = String(value);
+      if (valueString.length > columnWidths[index]) {
+        columnWidths[index] = valueString.length;
+      }
+    });
+  });
+
+  let tableString = "";
+  const headerRow = headers
+    .map((header, index) => header.padEnd(columnWidths[index]))
+    .join("   ");
+  tableString += headerRow + "\n";
+
+  const separator = columnWidths.map((width) => "-".repeat(width)).join("   ");
+  tableString += separator + "\n";
+
+  data.forEach((row) => {
+    const rowString = Object.values(row)
+      .map((value, index) => {
+        if (String(value).includes("-------")) {
+          return "-".repeat(columnWidths[index]);
+        }
+        return String(value).padEnd(columnWidths[index]);
+      })
+      .join("   ");
+    tableString += rowString + "\n";
+  });
+
+  return tableString;
 }
 
 async function generateReport() {
   const sessionFiles = await getSessionFiles(SESSIONS_DIR);
+  const reportData = [];
+  let totalCostAllSessions = 0;
+  const totalCostPerModelAllSessions = new Map();
 
   for (const filePath of sessionFiles) {
-    const { costsByModel, totalSessionCost } =
-      await processSessionFile(filePath);
+    const { costsByModel, sessionStart } = await processSessionFile(filePath);
+    if (!sessionStart || costsByModel.size === 0) {
+      continue;
+    }
 
-    console.log(costsByModel);
+    if (reportData.length > 0) {
+      reportData.push({ Session: "", Model: "", Cost: "" });
+    }
+
+    const sessionLabel = new Date(sessionStart)
+      .toISOString()
+      .slice(0, 16)
+      .replace("T", " ");
+
+    let totalSessionCost = 0;
+    let isFirstRowForThisSession = true;
+
+    costsByModel.forEach((cost, model) => {
+      totalSessionCost += cost;
+      totalCostPerModelAllSessions.set(
+        model,
+        (totalCostPerModelAllSessions.get(model) ?? 0) + cost,
+      );
+      reportData.push({
+        Session: isFirstRowForThisSession ? sessionLabel : "",
+        Model: model,
+        Cost: `$${cost.toFixed(4)}`,
+      });
+      isFirstRowForThisSession = false;
+    });
+
+    reportData.push({
+      Session: "",
+      Model: "",
+      Cost: "-------",
+    });
+
+    reportData.push({
+      Session: "",
+      Model: "Total",
+      Cost: `$${totalSessionCost.toFixed(4)}`,
+    });
+
+    totalCostAllSessions += totalSessionCost;
   }
-}
 
+  console.log("--- Session Cost Report ---");
+  console.log(formatTable(reportData));
+
+  const modelSummary = [];
+  totalCostPerModelAllSessions.forEach((cost, model) => {
+    modelSummary.push({ Model: model, "Total Cost": `$${cost.toFixed(4)}` });
+  });
+
+  console.log("\n--- Overall Summary ---");
+  console.log(formatTable(modelSummary));
+  console.log(
+    `\nGrand Total (All Sessions): $${totalCostAllSessions.toFixed(4)}`,
+  );
+}
 generateReport().catch(console.error);
