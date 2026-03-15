@@ -2,7 +2,7 @@
 name: scout
 description: Fast codebase recon that returns compressed context for handoff
 tools: read, grep, find, ls, bash, write
-model: deepseek/deepseek-v3.2
+model: qwen-coder:30b
 output: context.md
 defaultProgress: true
 ---

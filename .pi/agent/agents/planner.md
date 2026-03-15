@@ -2,7 +2,7 @@
 name: planner
 description: Creates implementation plans from context and requirements
 tools: read, grep, find, ls, write
-model: minimax/minimax-m2.5
+model: google/gemini-3-pro-preview
 thinking: high
 output: plan.md
 defaultReads: context.md

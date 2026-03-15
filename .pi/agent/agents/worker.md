@@ -1,7 +1,7 @@
 ---
 name: worker
 description: General-purpose subagent with full capabilities, isolated context
-model: deepseek/deepseek-v3.2
+model: qwen-coder:30b
 defaultReads: context.md, plan.md
 defaultProgress: true
 ---

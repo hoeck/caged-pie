@@ -2,7 +2,7 @@
 name: researcher
 description: Autonomous web researcher — searches, evaluates, and synthesizes a focused research brief
 tools: read, write, web_search, fetch_content, get_search_content
-model: minimax/minimax-m2.5
+model: google/gemini-3-pro-preview
 output: research.md
 defaultProgress: true
 ---

@@ -2,7 +2,7 @@
 name: reviewer
 description: Code review specialist that validates implementation and fixes issues
 tools: read, grep, find, ls, bash
-model: deepseek/deepseek-v3.2
+model: google/gemini-3-pro-preview
 thinking: high
 defaultReads: plan.md, progress.md
 defaultProgress: true
