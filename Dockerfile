@@ -16,8 +16,8 @@ RUN apt-get update && \
     less \
     binutils \
     nodejs \
-    npm
-
+    npm \
+    git
 
 # run the agent with limited perms
 USER ubuntu

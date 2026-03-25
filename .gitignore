@@ -5,3 +5,6 @@
 
 # helper binary to find files (why is this in .pi?)
 .pi/agent/bin/fd
+
+# subagent extension agent
+.pi/agent/extensions/subagent

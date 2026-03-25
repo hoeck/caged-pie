@@ -13,7 +13,7 @@ with only access to your projects current directory.
 
 1. clone this repo `git clone https://github.com/hoeck/caged-pie.git`
 2. adjust the `pi-build` script to contain your preferred packages
-3. build the caged-pie image: `./pi-build` (ignore the "Failed to clone repository" error)
+3. build the caged-pie image: `./pi-build`
 4. add this repo to you PATH or a symlink from your user bin dir to `pi`,
    e.g. `cd ~/bin; ln -s ~/caged-pie/pi pi`
 5. make sure you have the `OPENROUTER_API_KEY` env var set
