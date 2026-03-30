@@ -8,4 +8,3 @@ docker buildx build -t pi:latest .
 
 # pi packages
 ./pi-bash -c "pi install npm:pi-subagents"
-./pi-bash -c "npx pi-subagents"
